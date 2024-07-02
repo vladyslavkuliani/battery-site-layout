@@ -1,6 +1,7 @@
 [
   {
     "label": "Megapack 2XL",
+    "type": "Megapack 2XL",
     "widthFeet": 10,
     "lengthFeet": 40,
     "energyMw": 4,
@@ -9,6 +10,7 @@
   },
   {
     "label": "Megapack 2",
+    "type": "Megapack 2",
     "widthFeet": 10,
     "lengthFeet": 30,
     "energyMw": 3,
@@ -17,6 +19,7 @@
   },
   {
     "label": "Megapack",
+    "type": "Megapack",
     "widthFeet": 10,
     "lengthFeet": 30,
     "energyMw": 2,
@@ -25,6 +28,7 @@
   },
   {
     "label": "Powerpack",
+    "type": "Powerpack",
     "widthFeet": 10,
     "lengthFeet": 10,
     "energyMw": 1,
@@ -33,6 +37,7 @@
   },
   {
     "label": "Transformer",
+    "type": "Transformer",
     "widthFeet": 10,
     "lengthFeet": 10,
     "energyMw": -0.25,

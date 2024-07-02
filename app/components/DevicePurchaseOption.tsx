@@ -11,7 +11,7 @@ import Counter from './Counter';
 import counterStyles from './Counter.module.css';
 import deviceOptionStyles from './DevicePurchaseOption.module.css';
 
-export default function DevicePurchaseOption({ option, className }: { option: Device, className?: string }) {
+export default function DevicePurchaseOption({ option, className, onAdd, onRemove }: { option: Device, className?: string, onAdd: () => void, onRemove: () => void }) {
   return (
     <div className={`flex items-center ${className}`}>
       <Card className={deviceOptionStyles.card}>
@@ -41,7 +41,7 @@ export default function DevicePurchaseOption({ option, className }: { option: De
         </CardContent>
       </Card>
 
-      <Counter className={counterStyles.counter} />
+      <Counter className={counterStyles.counter} onIncrement={onAdd} onDecrement={onRemove} />
     </div>
   );
 }
