@@ -2,3 +2,9 @@
   color: black;
   margin-left: -3rem;
 }
+
+.input {
+  width: 3rem;
+  text-align: center;
+  background: transparent;
+}

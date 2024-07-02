@@ -2,19 +2,15 @@
 
 import DevicePurchaseOption from './DevicePurchaseOption';
 import { Device, DeviceType } from '../types';
-import { useReducer } from 'react';
+import { useEffect, useState } from 'react';
 import { formatCurrency } from '../utils';
 
 
 type DeviceCountByType = { [key in DeviceType]?: number };
 type Summary = {
-  usedDevicesByTypeCounts: DeviceCountByType;
   totalCost: number;
   requiredEnergy: number;
-};
-type ReducerAction = {
-  type: 'addItem' | 'removeItem';
-  deviceType: DeviceType;
+  requiredLandSize: number;
 };
 
 export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions: Device[] }) {
@@ -36,54 +32,35 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
     }, 0);
   };
 
-  const [summary, dispatch] = useReducer(
-    (state: Summary, action: ReducerAction) => {
-      const makeState = (usedDevicesByTypeCounts: DeviceCountByType) => {
-        return {
-          usedDevicesByTypeCounts,
-          totalCost: computeDeviceMetric(usedDevicesByTypeCounts, 'cost'),
-          requiredEnergy: computeDeviceMetric(usedDevicesByTypeCounts, 'energyMw'),
-          requiredLandSize: computeDeviceLandSize(usedDevicesByTypeCounts),
-        }
-      }
+  const [devicesByTypeCounts, setDevicesCount] = useState<DeviceCountByType>({});
+  const setDeviceCount = (deviceType: DeviceType, count: number) => {
+    setDevicesCount({
+      ...devicesByTypeCounts,
+      [deviceType]: count,
+    })
+  };
 
-      if (action.type === 'addItem') {
-        const deviceType = action.deviceType;
-
-        const usedDevicesByTypeCounts = {
-          ...state.usedDevicesByTypeCounts,
-          [deviceType]: 1 + (state.usedDevicesByTypeCounts[deviceType] || 0)
-        };
-
-        return makeState(usedDevicesByTypeCounts);
-      }
-
-      if (action.type === 'removeItem') {
-        const deviceType = action.deviceType;
-
-        const usedDevicesByTypeCounts = {
-          ...state.usedDevicesByTypeCounts,
-          [deviceType]: Math.max((state.usedDevicesByTypeCounts[deviceType] || 0) - 1, 0),
-        };
-
-        return makeState(usedDevicesByTypeCounts);
-      }
-
-      throw new Error(`Unknown action type. Got: ${action.type}`);
-    }, {
-    usedDevicesByTypeCounts: {},
-    totalCost: 0,
+  const [summary, setSummary] = useState<Summary>({
+    totalCost:0,
     requiredEnergy: 0,
-  });
+    requiredLandSize: 0,
+  })
+  useEffect(() => {
+    setSummary({
+      totalCost: computeDeviceMetric(devicesByTypeCounts, 'cost'),
+      requiredEnergy: computeDeviceMetric(devicesByTypeCounts, 'energyMw'),
+      requiredLandSize: computeDeviceLandSize(devicesByTypeCounts)
+    })
+  }, [devicesByTypeCounts]);
 
   return <div className="flex flex-row my-3 p-3">
     <div className="basis-1/2">
       <h2 className="text-xl mb-3">Select device</h2>
-      {deviceOptions.map(option => <DevicePurchaseOption key={option.label} className="mb-2" option={option} onAdd={() => dispatch({ type: 'addItem', deviceType: option.type })} onRemove={() => dispatch({ type: 'removeItem', deviceType: option.type })} />)}
+      {deviceOptions.map(option => <DevicePurchaseOption key={option.label} className="mb-2" option={option} onInput={(number) => setDeviceCount(option.type, number)} />)}
     </div>
     <div className="basis-1/2">
       <div className='text-xl mb-3'>Summary</div>
-      <div className="">
+      <div>
         <div>Total cost: {formatCurrency(summary?.totalCost)}</div>
         <div>Total energy: {summary?.requiredEnergy}MWh</div>
         <div>Land size: {summary.requiredLandSize}Sq Ft</div>
