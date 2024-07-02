@@ -6,8 +6,9 @@ import { useReducer } from 'react';
 import { formatCurrency } from '../utils';
 
 
+type DeviceCountByType = { [key in DeviceType]?: number };
 type Summary = {
-  usedDevicesByTypeCounts: { [key in DeviceType]: number };
+  usedDevicesByTypeCounts: DeviceCountByType;
   totalCost: number;
 };
 type ReducerAction = {
@@ -16,18 +17,26 @@ type ReducerAction = {
 };
 
 export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions: Device[] }) {
-  const [summary, dispatch] = useReducer(
-    (state, action: ReducerAction) => {
-      const computeDevicesTotalCost = (devicesByTypeCounts: { [key in DeviceType]: number }) => {
-        const devicesByType: { [key in DeviceType]?: Device } = deviceOptions.reduce((acc, option) => {
-          acc[option.type] = option;
-          return acc;
-        }, {} as { [key in DeviceType]?: Device })
+  const devicesByType: { [key in DeviceType]?: Device } = deviceOptions.reduce((acc, option) => {
+    acc[option.type] = option;
+    return acc;
+  }, {} as { [key in DeviceType]?: Device })
 
-        return Object.entries(devicesByTypeCounts).reduce((acc, [deviceType, count]) => {
-          const device = devicesByType[deviceType as DeviceType];
-          return acc + count * (device?.cost ?? 0);
-        }, 0);
+  const computedDeviceMetric = (devicesCountsByType: DeviceCountByType, metricType: 'cost' | 'energyMw') => {
+    return Object.entries(devicesCountsByType).reduce((acc, [deviceType, count]) => {
+      const device = devicesByType[deviceType as DeviceType];
+      return acc + count * (device?.[metricType] ?? 0);
+    }, 0);
+  };
+
+  const [summary, dispatch] = useReducer(
+    (state: Summary, action: ReducerAction) => {
+      const makeState = (usedDevicesByTypeCounts: DeviceCountByType) => {
+        return {
+          usedDevicesByTypeCounts,
+          totalCost: computedDeviceMetric(usedDevicesByTypeCounts, 'cost'),
+          requiredEnergy: computedDeviceMetric(usedDevicesByTypeCounts, 'energyMw')
+        }
       }
 
       if (action.type === 'addItem') {
@@ -38,10 +47,7 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
           [deviceType]: 1 + (state.usedDevicesByTypeCounts[deviceType] || 0)
         };
 
-        return {
-          usedDevicesByTypeCounts,
-          totalCost: computeDevicesTotalCost(usedDevicesByTypeCounts)
-        };
+        return makeState(usedDevicesByTypeCounts);
       }
 
       if (action.type === 'removeItem') {
@@ -52,16 +58,14 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
           [deviceType]: Math.max((state.usedDevicesByTypeCounts[deviceType] || 0) - 1, 0),
         };
 
-        return {
-          usedDevicesByTypeCounts,
-          totalCost: computeDevicesTotalCost(usedDevicesByTypeCounts)
-        };
+        return makeState(usedDevicesByTypeCounts);
       }
 
       throw new Error(`Unknown action type. Got: ${action.type}`);
     }, {
     usedDevicesByTypeCounts: {},
     totalCost: 0,
+    requiredEnergy: 0,
   });
 
   return <div className="flex flex-row my-3 p-3">
@@ -72,6 +76,7 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
     <div className="basis-1/2">
       <div className="text-xl flex justify-between">
         <div>Total cost: {formatCurrency(summary?.totalCost)}</div>
+        <div>Total energy: {summary?.requiredEnergy}MWh</div>
       </div>
       <div>Layout</div>
     </div>
