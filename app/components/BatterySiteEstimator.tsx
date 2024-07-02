@@ -10,6 +10,7 @@ type DeviceCountByType = { [key in DeviceType]?: number };
 type Summary = {
   usedDevicesByTypeCounts: DeviceCountByType;
   totalCost: number;
+  requiredEnergy: number;
 };
 type ReducerAction = {
   type: 'addItem' | 'removeItem';
@@ -22,10 +23,16 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
     return acc;
   }, {} as { [key in DeviceType]?: Device })
 
-  const computedDeviceMetric = (devicesCountsByType: DeviceCountByType, metricType: 'cost' | 'energyMw') => {
+  const computeDeviceMetric = (devicesCountsByType: DeviceCountByType, metricType: 'cost' | 'energyMw') => {
     return Object.entries(devicesCountsByType).reduce((acc, [deviceType, count]) => {
       const device = devicesByType[deviceType as DeviceType];
       return acc + count * (device?.[metricType] ?? 0);
+    }, 0);
+  };
+  const computeDeviceLandSize = (devicesCountsByType: DeviceCountByType) => {
+    return Object.entries(devicesCountsByType).reduce((acc, [deviceType, count]) => {
+      const device = devicesByType[deviceType as DeviceType];
+      return acc + count * (device?.widthFeet ?? 0) * (device?.lengthFeet ?? 0);
     }, 0);
   };
 
@@ -34,8 +41,9 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
       const makeState = (usedDevicesByTypeCounts: DeviceCountByType) => {
         return {
           usedDevicesByTypeCounts,
-          totalCost: computedDeviceMetric(usedDevicesByTypeCounts, 'cost'),
-          requiredEnergy: computedDeviceMetric(usedDevicesByTypeCounts, 'energyMw')
+          totalCost: computeDeviceMetric(usedDevicesByTypeCounts, 'cost'),
+          requiredEnergy: computeDeviceMetric(usedDevicesByTypeCounts, 'energyMw'),
+          requiredLandSize: computeDeviceLandSize(usedDevicesByTypeCounts),
         }
       }
 
@@ -74,9 +82,11 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
       {deviceOptions.map(option => <DevicePurchaseOption key={option.label} className="mb-2" option={option} onAdd={() => dispatch({ type: 'addItem', deviceType: option.type })} onRemove={() => dispatch({ type: 'removeItem', deviceType: option.type })} />)}
     </div>
     <div className="basis-1/2">
-      <div className="text-xl flex justify-between">
+      <div className='text-xl mb-3'>Summary</div>
+      <div className="">
         <div>Total cost: {formatCurrency(summary?.totalCost)}</div>
         <div>Total energy: {summary?.requiredEnergy}MWh</div>
+        <div>Land size: {summary.requiredLandSize}Sq Ft</div>
       </div>
       <div>Layout</div>
     </div>
