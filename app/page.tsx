@@ -8,7 +8,7 @@ export default async function Home() {
   const deviceOptions = JSON.parse(file) as Device[];
 
   return (
-    <main className="container mx-auto">
+    <main className="container mx-auto my-3">
       <h1 className="my-4 text-2xl">Battery Site Estimator</h1>
       <BatterySiteEstimator deviceOptions={deviceOptions} />
     </main>

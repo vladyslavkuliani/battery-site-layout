@@ -1,6 +1,7 @@
 "use client";
 
 import DevicePurchaseOption from './DevicePurchaseOption';
+import SiteLayout from './SiteLayout';
 import { Device, DeviceType } from '../types';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '../utils';
@@ -32,26 +33,26 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
     }, 0);
   };
 
-  const [devicesByTypeCounts, setDevicesCount] = useState<DeviceCountByType>({});
+  const [devicesCountsByType, setDevicesCount] = useState<DeviceCountByType>({});
   const setDeviceCount = (deviceType: DeviceType, count: number) => {
     setDevicesCount({
-      ...devicesByTypeCounts,
+      ...devicesCountsByType,
       [deviceType]: count,
     })
   };
 
   const [summary, setSummary] = useState<Summary>({
-    totalCost:0,
+    totalCost: 0,
     requiredEnergy: 0,
     requiredLandSize: 0,
   })
   useEffect(() => {
     setSummary({
-      totalCost: computeDeviceMetric(devicesByTypeCounts, 'cost'),
-      requiredEnergy: computeDeviceMetric(devicesByTypeCounts, 'energyMw'),
-      requiredLandSize: computeDeviceLandSize(devicesByTypeCounts)
+      totalCost: computeDeviceMetric(devicesCountsByType, 'cost'),
+      requiredEnergy: computeDeviceMetric(devicesCountsByType, 'energyMw'),
+      requiredLandSize: computeDeviceLandSize(devicesCountsByType)
     })
-  }, [devicesByTypeCounts]);
+  }, [devicesCountsByType]);
 
   return <div className="flex flex-row my-3 p-3">
     <div className="basis-1/2">
@@ -60,12 +61,15 @@ export default function BatterySiteEstimator({ deviceOptions }: { deviceOptions:
     </div>
     <div className="basis-1/2">
       <div className='text-xl mb-3'>Summary</div>
-      <div>
+      <div className='mb-4'>
         <div>Total cost: {formatCurrency(summary?.totalCost)}</div>
         <div>Total energy: {summary?.requiredEnergy}MWh</div>
         <div>Land size: {summary.requiredLandSize}Sq Ft</div>
       </div>
-      <div>Layout</div>
+
+      <div className='text-xl h-4/5'>
+        <SiteLayout devicesByType={devicesByType} devicesCountsByType={devicesCountsByType} />
+      </div>
     </div>
   </div>
 }
