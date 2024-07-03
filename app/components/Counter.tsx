@@ -23,7 +23,7 @@ export default function Counter({ className, onInput }: { className?: string, on
     onCountInput(count + 1)
   }
   const decrementCount = () => {
-    setCount(count - 1);
+    onCountInput(count - 1)
   }
 
   return (
