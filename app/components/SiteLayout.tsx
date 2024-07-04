@@ -1,10 +1,11 @@
 import * as THREE from 'three'
 import * as React from 'react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Device, DeviceType } from '../types'
+import { Checkbox, FormControlLabel } from '@mui/material'
 
-function Box({ meshProps, boxX }: { meshProps: JSX.IntrinsicElements['mesh'], boxX?: number }) {
+function Box({ meshProps, boxX, is3D }: { meshProps: JSX.IntrinsicElements['mesh'], boxX?: number, is3D: boolean }) {
   // This reference will give us direct access to the THREE.Mesh object
   const ref = useRef<THREE.Mesh>(null!)
   // Hold state for hovered and clicked events
@@ -16,33 +17,61 @@ function Box({ meshProps, boxX }: { meshProps: JSX.IntrinsicElements['mesh'], bo
       ref={ref}
       onPointerOver={(event) => hover(true)}
       onPointerOut={(event) => hover(false)}>
-      <boxGeometry args={[boxX || 1, 1, 0]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'green'} />
+      <boxGeometry args={[boxX || 1, 1, is3D ? 1: 0]} />
+      <meshStandardMaterial color={hovered ? 'hotpink' : 'white'} />
     </mesh>
   )
 }
 
-function Container({ rows }) {
+function Container({ rows, is3D, shouldRotate }: { rows: Array<Array<number>>; is3D: boolean; shouldRotate: boolean }) {
   const ref = useRef<THREE.Mesh>(null!)
-  useFrame(({ camera, mouse }) => {
-    // ref.current.rotation.y -= 0.005
-  })
-  const { camera } = useThree()
+
+  const { camera } = useThree();
   camera.position.z = 8;
+  camera.position.x = 0.1;
+
+  useFrame(({ camera }) => {
+    console.log(camera.position.y);
+    if (is3D) {
+      if (camera.position.y >= -4) {
+        camera.translateY(-0.05)
+        camera.lookAt(0, 0, 0)
+      }
+      
+      if (shouldRotate) {
+        ref.current.rotation.z -= 0.001
+      }
+    }
+    else if (!is3D && camera.position.y < 0) {
+      ref.current.rotation.z = 0
+      
+      camera.translateY(0.05);
+      camera.lookAt(0, 0, 0)
+    }
+  })
+  
+  
 
   let y = 6.5;
+  const spacer = is3D ? 1.5 : 1;
   return (<mesh ref={ref} position={[0, 0, 0]}>
     {
       rows.map((row) => {
         let x = -9.5;
-        y -= 1.2;
+        y -= 1.2 * spacer;
         return row.map((length, i) => {
-          x = x + (row[i - 1] ? row[i - 1] / 20 + length / 20 + 0.5 : 3 + length / 20 );
+          
+          x = x + (row[i - 1] ? row[i - 1] / 20 + length / 20 + 0.5 * spacer : 3 + length / 20 );
 
           return (
-            <Box key={`${length}-${i}`} meshProps={{
-              position: [x, y, 0],
-            }} boxX={length / 10} />
+            <Box
+              key={`${length}-${i}`}
+              meshProps={{
+                position: [x, y, 0],
+              }}
+              boxX={length / 10}
+              is3D={is3D}
+            />
           );
         })
       })
@@ -66,12 +95,33 @@ export default function SiteLayout({ devicesByType, devicesCountsByType }: { dev
     rowCounter++;
   });
 
+  const [is3D, setShow3D] = useState(false);
+  const [shouldRotate, setShouldRotation] = useState(false);
+  useEffect(() => {
+    if (!is3D) {
+      setShouldRotation(false);
+    }
+  }, [is3D])
+
   return (
+    <div className='h-4/5'>
+      <div className="flex">
+        <FormControlLabel
+          control={<Checkbox style={{ 'color': '#4B77BE'}} onChange={() => setShow3D(!is3D)}  />}
+          label="Enable 3D preview"
+        />
+        <FormControlLabel
+          disabled={!is3D}
+          control={<Checkbox style={{ 'color': '#4B77BE'}} checked={shouldRotate} onChange={() => setShouldRotation(!shouldRotate)}  />}
+          label="Enable rotation"
+        />
+      </div>
     <Canvas className='border'>
       <ambientLight intensity={1} />
       <spotLight position={[50, 10, 10]} angle={0.15} penumbra={1} />
       <pointLight position={[-10, -10, -10]} />
-      <Container rows={rows} />
+      <Container rows={rows} is3D={is3D} shouldRotate={shouldRotate} />
     </Canvas>
+    </div>
   )
 }
