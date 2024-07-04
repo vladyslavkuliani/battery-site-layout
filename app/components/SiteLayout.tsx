@@ -5,7 +5,13 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Device, DeviceType } from '../types'
 import { Checkbox, FormControlLabel } from '@mui/material'
 
-function Box({ meshProps, boxX, is3D }: { meshProps: JSX.IntrinsicElements['mesh'], boxX?: number, is3D: boolean }) {
+function Box({ meshProps, boxX, is3D, onHover, onUnhover }: {
+  meshProps: JSX.IntrinsicElements['mesh'],
+  boxX?: number,
+  is3D: boolean,
+  onHover: () => void,
+  onUnhover: () => void
+}) {
   // This reference will give us direct access to the THREE.Mesh object
   const ref = useRef<THREE.Mesh>(null!)
   // Hold state for hovered and clicked events
@@ -15,15 +21,25 @@ function Box({ meshProps, boxX, is3D }: { meshProps: JSX.IntrinsicElements['mesh
     <mesh
       {...meshProps}
       ref={ref}
-      onPointerOver={(event) => hover(true)}
-      onPointerOut={(event) => hover(false)}>
+      onPointerOver={(event) => {
+        hover(true);
+        onHover();
+      }}
+      onPointerOut={(event) => {
+        hover(false)
+        onUnhover();
+      }}>
       <boxGeometry args={[boxX || 1, 1, is3D ? 1 : 0]} />
       <meshStandardMaterial color={hovered ? 'hotpink' : 'white'} />
     </mesh>
   )
 }
 
-function Container({ rows, is3D, shouldRotate }: { rows: Array<Array<number>>; is3D: boolean; shouldRotate: boolean }) {
+function Container({ rows, is3D, shouldRotate, onHover }: {
+  rows: Array<Array<{ length: number; type: DeviceType }>>;
+  is3D: boolean; shouldRotate: boolean;
+  onHover: (t: DeviceType | null) => void
+}) {
   const ref = useRef<THREE.Mesh>(null!)
 
   const { camera } = useThree();
@@ -58,9 +74,9 @@ function Container({ rows, is3D, shouldRotate }: { rows: Array<Array<number>>; i
       rows.map((row) => {
         let x = -9.5;
         y -= 1.2 * spacer;
-        return row.map((length, i) => {
+        return row.map(({ length, type }, i) => {
 
-          x = x + (row[i - 1] ? row[i - 1] / 20 + length / 20 + 0.5 * spacer : 3 + length / 20);
+          x = x + (row[i - 1] ? row[i - 1].length / 20 + length / 20 + 0.5 * spacer : 3 + length / 20);
 
           return (
             <Box
@@ -70,6 +86,8 @@ function Container({ rows, is3D, shouldRotate }: { rows: Array<Array<number>>; i
               }}
               boxX={length / 10}
               is3D={is3D}
+              onHover={() => onHover(type)}
+              onUnhover={() => onHover(null)}
             />
           );
         })
@@ -78,19 +96,23 @@ function Container({ rows, is3D, shouldRotate }: { rows: Array<Array<number>>; i
   </mesh>);
 }
 
-export default function SiteLayout({ devicesByType, devicesCountsByType }: { devicesByType: { [key in DeviceType]?: Device }, devicesCountsByType: { [key in DeviceType]?: number } }) {
-  const rows: Array<Array<number>> = [];
+export default function SiteLayout({ devicesByType, devicesCountsByType, onHover }: {
+  devicesByType: { [key in DeviceType]?: Device },
+  devicesCountsByType: { [key in DeviceType]?: number },
+  onHover: (t: DeviceType | null) => void
+}) {
+  const rows: Array<Array<{ type: DeviceType; length: number }>> = [];
   let rowCounter = 0;
 
-  const boxLengths = Object.entries(devicesCountsByType).reduce((acc, entry) => {
+  const boxLengthsAndType: Array<{ type: DeviceType; length: number }> = Object.entries(devicesCountsByType).reduce((acc, entry) => {
     const [deviceType, count] = entry;
 
     const device = devicesByType[deviceType as DeviceType];
-    return [...acc, ...Array(count).fill(device?.lengthFeet)];
+    return [...acc, ...Array(count).fill({ length: device?.lengthFeet, type: deviceType })];
   }, []);
-  boxLengths.forEach((length) => {
+  boxLengthsAndType.forEach((lengthAndType) => {
     const index = rowCounter % 10;
-    rows[index] = (rows[index] || []).concat(length);
+    rows[index] = (rows[index] || []).concat(lengthAndType);
     rowCounter++;
   });
 
@@ -119,7 +141,7 @@ export default function SiteLayout({ devicesByType, devicesCountsByType }: { dev
         <ambientLight intensity={1} />
         <spotLight position={[50, 10, 10]} angle={0.15} penumbra={1} />
         <pointLight position={[-10, -10, -10]} />
-        <Container rows={rows} is3D={is3D} shouldRotate={shouldRotate} />
+        <Container rows={rows} is3D={is3D} shouldRotate={shouldRotate} onHover={onHover}  />
       </Canvas>
     </div>
   )

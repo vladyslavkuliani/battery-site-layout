@@ -74,13 +74,16 @@ export default function BatterySiteEstimator({ deviceOptions, on }: { deviceOpti
     })
   }, [devicesCountsByType]);
 
+  const [hoveredDeviceType, hover] = useState<DeviceType | null>(null);
+  console.log('hoveredDeviceType', hoveredDeviceType);
+
   return <div className="flex flex-row my-3 p-3">
     <div className="basis-1/2">
       <h2 className="text-xl mb-3">Select device</h2>
       {deviceOptions.map(option => (
         <DevicePurchaseOption
           key={option.label}
-          className="mb-2"
+          className={`mb-2 ${hoveredDeviceType === option.type ? 'hover' : ''}`}
           option={option}
           count={devicesCountsByType[option.type] || 0}
           onInput={(number) => setDeviceCount(option.type, number)}
@@ -108,7 +111,7 @@ export default function BatterySiteEstimator({ deviceOptions, on }: { deviceOpti
       </div>
 
       <div className='text-xl h-4/5'>
-        <SiteLayout devicesByType={devicesByType} devicesCountsByType={devicesCountsByType} />
+        <SiteLayout devicesByType={devicesByType} devicesCountsByType={devicesCountsByType} onHover={hover} />
       </div>
     </div>
   </div>

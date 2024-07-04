@@ -14,11 +14,18 @@
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 100, 100, 100;
   }
+}
 
-  .Mui-disabled {
-    color: rgb(145, 136, 136) !important;
+.Mui-disabled {
+  color: rgb(145, 136, 136) !important;
+}
+
+.hover {
+  .MuiCard-root {
+      background-color: hotpink;
   }
 }
+
 
 body {
   color: rgb(var(--foreground-rgb));
