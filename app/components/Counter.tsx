@@ -3,12 +3,16 @@
 import { IconButton } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import counterStyles from './Counter.module.css';
 
-export default function Counter({ className, onInput }: { className?: string, onInput: (n: number) => void }) {
-  const [count, setCount] = useState(0);
+export default function Counter({ className, count: propsCount, onInput }: { className?: string, count: number, onInput: (n: number) => void }) {
+  const [count, setCount] = useState(propsCount || 0);
+  useEffect(() => {
+    setCount(propsCount);
+  }, [propsCount]);
+
   const onCountInput = (count: number) => {
     if (!count || count < 0 || Number.isNaN(count)) {
       setCount(0);
@@ -20,6 +24,7 @@ export default function Counter({ className, onInput }: { className?: string, on
     onInput(count);
   }
   const incrementCount = () => {
+    console.log('increment', count + 1);
     onCountInput(count + 1)
   }
   const decrementCount = () => {
